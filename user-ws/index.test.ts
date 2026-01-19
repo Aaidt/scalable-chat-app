@@ -1,13 +1,14 @@
 import { test, describe, expect } from "bun:test"
 
-const BACKEND_URL = "ws://localhost:8080"
+const BACKEND_URL1 = "ws://localhost:8080"
+const BACKEND_URL2 = "ws://localhost:8081"
 
 describe("Chat application", () => {
    test("Message sent from room1 reaches another participant also in room1", async () => {
-      const ws1 = new WebSocket(BACKEND_URL)
-      const ws2 = new WebSocket(BACKEND_URL)
+      const ws1 = new WebSocket(BACKEND_URL1)
+      const ws2 = new WebSocket(BACKEND_URL2)
 
-      const timeout = 4 * 1000;
+      const timeout = 7 * 1000;
       try {
          await Promise.race([
             Promise.all([
