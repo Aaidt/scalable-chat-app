@@ -17,8 +17,8 @@ interface User {
 
 interface Data {
    type: "join_room" | "leave_room" | "chat"
-   message: string,
-   roomId?: string
+   message?: string,
+   roomId: string
 }
 
 function auth(token: string): boolean {
@@ -57,6 +57,17 @@ wss.on("connection", function connection(ws, req) {
 
    ws.on("message", function message(rawData) {
       const data: Data = JSON.parse(rawData.toString())
+      const roomId = data.roomId;
+      if (!roomId) {
+         console.log('no roomId')
+         return;
+      }
+      const room = rooms.get(roomId);
+      if (!room) {
+         console.log('no room found')
+         return;
+      }
+
       const user = users.find(u => u.ws === ws)
       if (!user) {
          users.push({
@@ -68,9 +79,6 @@ wss.on("connection", function connection(ws, req) {
 
       switch (data.type) {
          case "join_room": {
-            const roomId = data.roomId;
-            if (!roomId) return;
-            const room = rooms.get(roomId);
             const joined = room?.users.add(user!)
             if (joined) {
                ws.send(JSON.stringify({
@@ -81,7 +89,28 @@ wss.on("connection", function connection(ws, req) {
          }
 
          case "leave_room": {
+            if (room.users.delete(user!)) {
+               ws.send(JSON.stringify({
+                  message: "left room"
+               }))
+            }
+            break;
+         }
 
+         case "chat": {
+            const message = data.message
+            if (!message) {
+               ws.send(JSON.stringify({
+                  message: "no message recieved on the server"
+               }));
+            }
+            room.users.forEach(user => {
+               user.ws.send(JSON.stringify({
+                  message
+               }))
+            })
+
+            break;
          }
       }
    })
