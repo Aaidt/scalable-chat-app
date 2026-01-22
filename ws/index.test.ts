@@ -9,7 +9,6 @@ describe("Chat application", () => {
       const ws1 = new WebSocket(BACKEND_URL1)
       const ws2 = new WebSocket(BACKEND_URL2)
 
-      const timeout = 7 * 1000;
       try {
          await Promise.race([
             Promise.all([
@@ -17,7 +16,7 @@ describe("Chat application", () => {
                new Promise<void>(res => ws2.onopen = () => res())
             ]),
             new Promise((_, rej) => {
-               setTimeout(rej, timeout)
+               setTimeout(() => rej, 7 * 1000)
             })
          ])
          console.log("connected")
