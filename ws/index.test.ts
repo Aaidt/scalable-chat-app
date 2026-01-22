@@ -1,4 +1,5 @@
 import { test, describe, expect } from "bun:test"
+import { WebSocket } from "ws"
 
 const BACKEND_URL1 = "ws://localhost:8080"
 const BACKEND_URL2 = "ws://localhost:8081"
@@ -25,28 +26,38 @@ describe("Chat application", () => {
       }
 
       ws1.send(JSON.stringify({
-         type: "join_room",
-         room: "room-1"
+         type: "join",
+         channel: "room-1"
       }))
 
       ws2.send(JSON.stringify({
-         type: "join_room",
-         room: "room-1"
+         type: "join",
+         channel: "room-1"
+      }))
+      await Bun.sleep(100)
+
+      const recieved = new Promise<void>((resolve, reject) => {
+         ws2.onmessage = ({ data }) => {
+            try {
+               const parsedData = JSON.parse(data.toString());
+               console.log("recieved", parsedData)
+               expect(parsedData.message == "hey")
+               resolve()
+            } catch (e) {
+               reject(e)
+            }
+         }
+      })
+      ws1.send(JSON.stringify({
+         type: "chat",
+         message: "hey",
+         channel: "room-1"
       }))
 
-      await new Promise<void>((resolve) => {
-         ws2.onmessage = ({ data }) => {
-            const parsedData = JSON.parse(data);
-            expect(parsedData.type == "chat")
-            expect(parsedData.message == "hey")
-            resolve()
-         }
-         ws1.send(JSON.stringify({
-            type: "chat",
-            message: "hey",
-            room: "room-1"
-         }))
-      })
+      await recieved;
 
-   })
+      ws1.close();
+      ws2.close();
+
+   }, 10 * 1000)
 })
